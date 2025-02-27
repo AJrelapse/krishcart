@@ -10,12 +10,18 @@ export function useAuthenticated() {
       try {
          if (typeof window !== 'undefined' && window.localStorage) {
             const cookies = document.cookie.split(';')
-            const loggedInCookie =
-               cookies
-                  .find((cookie) => cookie.startsWith('logged-in'))
-                  .split('=')[1] === 'true'
 
-            setAuthenticated(loggedInCookie ?? false)
+            // Find the 'logged-in' cookie safely
+            const loggedInCookie = cookies.find((cookie) =>
+               cookie.trim().startsWith('logged-in')
+            )
+
+            // Ensure loggedInCookie exists before splitting
+            const isLoggedIn = loggedInCookie
+               ? loggedInCookie.split('=')[1] === 'true'
+               : false
+
+            setAuthenticated(isLoggedIn)
          }
       } catch (error) {
          console.error({ error })
@@ -24,3 +30,4 @@ export function useAuthenticated() {
 
    return { authenticated: validateBoolean(authenticated, true) }
 }
+
