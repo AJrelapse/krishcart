@@ -4,12 +4,16 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn, isVariableValid } from '@/lib/utils'
-import { isEmailValid, isIranianPhoneNumberValid } from '@persepolis/regex'
+import { isEmailValid } from '@persepolis/regex'
 import { Loader, MailIcon, SmartphoneIcon } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import * as React from 'react'
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {}
+
+function isIndianPhoneNumberValid(phone: string) {
+   return /^[6-9]\d{9}$/.test(phone) // ✅ Validates Indian numbers (10 digits, starts with 6-9)
+}
 
 export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
    const [isLoading, setIsLoading] = React.useState<boolean>(false)
@@ -170,7 +174,7 @@ function TryComponents({ isLoading, setIsLoading, setFetchedOTP }) {
                </Label>
                <Input
                   id="phone"
-                  placeholder="+989123456789"
+                  placeholder="+91 9876543210"
                   type="phone"
                   autoCapitalize="none"
                   autoComplete="phone"
@@ -179,7 +183,7 @@ function TryComponents({ isLoading, setIsLoading, setFetchedOTP }) {
                   onChange={handlePhoneChange}
                   required
                />
-               {isVariableValid(phone) && !isIranianPhoneNumberValid(phone) && (
+               {isVariableValid(phone) && !isIndianPhoneNumberValid(phone) && (
                   <p className="mt-2 text-sm text-red-700">
                      Phone Number is not valid.
                   </p>
@@ -187,7 +191,7 @@ function TryComponents({ isLoading, setIsLoading, setFetchedOTP }) {
             </div>
             <Button
                onClick={onSubmitPhone}
-               disabled={isLoading || !isIranianPhoneNumberValid(phone)}
+               disabled={isLoading || !isIndianPhoneNumberValid(phone)}
             >
                {isLoading && <Loader className="mr-2 h-4 animate-spin" />}
                Login with Phone
