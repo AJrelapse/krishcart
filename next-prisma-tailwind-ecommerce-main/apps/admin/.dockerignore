@@ -1,7 +1,0 @@
-node_modules
-.next
-prisma
-Dockerfile
-.dockerignore
-.git
-.env
