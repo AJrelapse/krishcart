@@ -1,5 +1,14 @@
-import prisma from '@/lib/prisma'
+import { PrismaClient } from "@prisma/client";
 import { NextResponse } from 'next/server'
+import cloudinary from 'cloudinary';
+
+cloudinary.v2.config({
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
+  api_secret: process.env.NEXT_PUBLIC_CLOUDINARY_API_SECRET,
+});
+
+const prisma = new PrismaClient();
 
 export async function DELETE(
    req: Request,
@@ -29,9 +38,10 @@ export async function DELETE(
    }
 }
 
+
 export async function PATCH(
    req: Request,
-   { params }: { params: { categoryId: string } } // ✅ Fix: Correct parameter name
+   { params }: { params: { categoryId: string } }
 ) {
    try {
       const userId = req.headers.get('X-USER-ID')
@@ -41,7 +51,7 @@ export async function PATCH(
       }
 
       const body = await req.json()
-      const { title, description, bannerId } = body
+      const { title, description, imageUrl, bannerId} = body // ✅ Added `image`
 
       if (!bannerId) {
          return NextResponse.json({ error: 'Banner ID is required' }, { status: 400 })
@@ -51,7 +61,7 @@ export async function PATCH(
          return NextResponse.json({ error: 'Title is required' }, { status: 400 })
       }
 
-      if (!params.categoryId) {  // ✅ Fix: Correct parameter name
+      if (!params.categoryId) {
          return NextResponse.json({ error: 'Category ID is required' }, { status: 400 })
       }
 
@@ -64,25 +74,41 @@ export async function PATCH(
          return NextResponse.json({ error: 'Category not found' }, { status: 404 })
       }
 
+      let uploadedImageUrl = existingCategory.imageUrl; // Keep existing image if no new image
+
+      // ✅ Upload image to Cloudinary if a new image is provided
+      if (imageUrl && (imageUrl.startsWith('data:image') || imageUrl !== existingCategory.imageUrl)) {
+         console.log("📤 Uploading new image to Cloudinary...");
+         const uploadResponse = await cloudinary.v2.uploader.upload(imageUrl, {
+            folder: "categories",
+         });
+         uploadedImageUrl = uploadResponse.secure_url;
+         console.log("✅ Uploaded to Cloudinary:", uploadedImageUrl);
+      }
+      
+
       // Update category
       const updatedCategory = await prisma.category.update({
          where: {
-            id: params.categoryId,  // ✅ Fix: Correct parameter name
+            id: params.categoryId,
          },
          data: {
             title,
             description,
-            banners: {  // ✅ Fix: Use "banners" if it's an array
+            imageUrl: imageUrl, // ✅ Store image URL
+            banners: {
                connect: { id: bannerId },
             },
          },
-      })
+      });
+      console.log("✅ Database updated with:", updatedCategory);
 
-      return NextResponse.json(updatedCategory)
+      return NextResponse.json(updatedCategory);
 
    } catch (error) {
       console.error('[CATEGORY_PATCH]', error)
       return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 })
    }
 }
+
 

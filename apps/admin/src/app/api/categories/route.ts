@@ -42,7 +42,7 @@ export async function POST(req: Request) {
       const body = await req.json();
       console.log("Received body:", body);
 
-      const { title, description, bannerId } = body;
+      const { title, description, imageUrl, bannerId } = body;
 
       if (!title) {
          return NextResponse.json({ error: 'Title is required' }, { status: 400 });
@@ -66,6 +66,7 @@ export async function POST(req: Request) {
          data: {
             title,
             description,
+            imageUrl,
             banners: {
                connect: [{ id: bannerId }]
             },

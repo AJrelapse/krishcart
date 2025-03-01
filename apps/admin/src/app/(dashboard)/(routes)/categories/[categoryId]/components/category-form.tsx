@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { zodResolver } from '@hookform/resolvers/zod'
+import ImageUpload from '@/components/ui/image-upload'
 import { Banner, Category } from '@prisma/client'
 import { Trash } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
@@ -32,6 +33,7 @@ import * as z from 'zod'
 const formSchema = z.object({
    title: z.string().min(2, 'Title must be at least 2 characters long'),
    description: z.string().min(1, 'Description is required'),
+   imageUrl: z.string().optional(),
    bannerId: z.string().min(1, 'Banner is required'),
 })
 
@@ -60,13 +62,15 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
       resolver: zodResolver(formSchema),
       defaultValues: initialData || {
          title: '',
-         description: 'Default description',
+         description: '',
+         imageUrl: '',
          bannerId: '',
       },
    })
 
    const onSubmit = async (data: CategoryFormValues) => {
-      console.log('🚀 Submitting form with data:', data)
+      console.log('🚀 Submitting form with data:', data);
+      console.log('🖼️ New Image URL:', data.imageUrl); // Debugging the image URL
    
       try {
          setLoading(true)
@@ -74,35 +78,37 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
          const url = initialData
             ? `/api/categories/${params.categoryId}`
             : `/api/categories`
-   
+
          console.log(`📡 Sending ${method} request to ${url}...`)
-   
+
          const response = await fetch(url, {
             method,
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
+            body: JSON.stringify({
+               title: data.title,
+               description: data.description,
+               imageUrl: data.imageUrl,
+               bannerId: data.bannerId,
+            }),
             cache: 'no-store',
          })
-   
-         console.log("📡 Response Status:", response.status)
-         console.log("📡 Response Headers:", response.headers)
-   
-         const responseText = await response.text(); // Read as text first
-         console.log("📡 Raw Response Body:", responseText); // Logs the actual response
-   
-         let responseData;
+
+         const responseText = await response.text()
+         console.log('📡 Raw Response Body:', responseText)
+
+         let responseData
          try {
-            responseData = JSON.parse(responseText); // Try parsing as JSON
+            responseData = JSON.parse(responseText)
          } catch (error) {
-            console.error("❌ Response is not valid JSON:", responseText);
-            throw new Error("Invalid JSON response from server");
+            console.error('❌ Response is not valid JSON:', responseText)
+            throw new Error('Invalid JSON response from server')
          }
-   
+
          if (!response.ok) {
             console.error('❌ API Error:', responseData)
             throw new Error(responseData.error || 'Failed to save category')
          }
-   
+
          toast.success(initialData ? 'Category updated.' : 'Category created.')
          router.refresh()
          router.push('/categories')
@@ -113,7 +119,6 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
          setLoading(false)
       }
    }
-   
 
    const onDelete = async () => {
       try {
@@ -126,9 +131,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
          router.push('/categories')
          toast.success('Category deleted.')
       } catch (error: any) {
-         toast.error(
-            'Make sure you removed all products using this category first.'
-         )
+         toast.error('Make sure you removed all products using this category first.')
       } finally {
          setLoading(false)
          setOpen(false)
@@ -159,22 +162,35 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
          <Separator />
          <Form {...form}>
             <form
-               onSubmit={(e) => {
-                  e.preventDefault()
-                  console.log('✅ Form submit triggered')
-                  form.handleSubmit(
-                     (data) => {
-                        console.log('🚀 Running onSubmit with data:', data)
-                        onSubmit(data)
-                     },
-                     (errors) => {
-                        console.error('❌ Form validation failed:', errors)
-                     }
-                  )(e)
-               }}
+               onSubmit={form.handleSubmit(onSubmit)}
                className="space-y-8 w-full"
             >
                <div className="md:grid md:grid-cols-3 gap-8">
+               <FormField
+   control={form.control}
+   name="imageUrl"
+   render={({ field }) => (
+      <FormItem>
+         <FormLabel>Category Image</FormLabel>
+         <FormControl>
+            <ImageUpload
+               value={field.value ? [field.value] : []}
+               disabled={loading}
+               onChange={(urls: string[]) => {
+                  console.log("🖼️ Image selected:", urls[0]); // Debugging log
+                  field.onChange(urls[0] || '');
+               }}
+               onRemove={() => {
+                  console.log("🗑️ Image removed");
+                  field.onChange('');
+               }}
+            />
+         </FormControl>
+         <FormMessage />
+      </FormItem>
+   )}
+/>
+
                   <FormField
                      control={form.control}
                      name="title"
