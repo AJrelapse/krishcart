@@ -11,6 +11,7 @@ import prisma from '@/lib/prisma'
 import { isVariableValid } from '@/lib/utils'
 import Categories from "@/components/native/Categories";
 import FeaturedDeals from "@/components/native/FeaturedDeals";
+import LearnAyurveda from "@/components/native/LearnAyurveda"; 
 
 
 export default async function Index() {
@@ -64,7 +65,11 @@ export default async function Index() {
          <Heading title="Featured Deals & Discounts 🔥" description="Grab these limited-time discounts!" />
          <FeaturedDeals products={discountedProducts} />
          <Separator className="my-8" />
-         
+
+         <Heading title="Learn About Ayurveda 🧘" description="Discover the health benefits of Ayurveda, herbal medicine, and pooja rituals." />
+         <LearnAyurveda />
+         <Separator className="my-8" />
+
          {isVariableValid(blogs) ? (
             <BlogPostGrid blogs={blogs} />
          ) : (

@@ -10,7 +10,7 @@ import Link from 'next/link'
 
 export function Receipt() {
    const { authenticated } = useAuthenticated()
-   const { loading, cart, refreshCart, dispatchCart } = useCartContext()
+   const { loading, cart } = useCartContext()
 
    function calculatePayableCost() {
       let totalAmount = 0,
@@ -36,6 +36,8 @@ export function Receipt() {
       }
    }
 
+   const payableAmount = calculatePayableCost().payableAmount
+
    return (
       <Card className={loading && 'animate-pulse'}>
          <CardHeader className="p-4 pb-0">
@@ -59,13 +61,13 @@ export function Receipt() {
             <Separator className="my-4" />
             <div className="flex justify-between">
                <p>Payable Amount</p>
-               <h3>${calculatePayableCost().payableAmount}</h3>
+               <h3>${payableAmount}</h3>
             </div>
          </CardContent>
          <Separator />
          <CardFooter>
             <Link
-               href={authenticated ? '/checkout' : '/login'}
+               href={authenticated ? `/checkout?totalAmount=${payableAmount}` : '/login'}
                className="w-full"
             >
                <Button
